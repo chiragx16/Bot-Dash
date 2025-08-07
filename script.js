@@ -62,7 +62,7 @@ class LogViewer {
         setTimeout(() => {
             toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 500);
-        }, 5000);
+        }, 15000);
     }
     
     initEventListeners() {
@@ -302,26 +302,47 @@ class LogViewer {
         }
     }
     
-    stopBot() {
+    async stopBot() {
         if (!this.isBotRunning) return;
-        
+    
         this.isBotRunning = false;
         this.startBotBtn.disabled = false;
         this.stopBotBtn.disabled = true;
-        
+    
         // Re-enable schedule controls when bot is stopped
         this.scheduleEnabled.disabled = false;
         this.scheduleInterval.disabled = false;
         this.scheduleUnit.disabled = false;
-        this.scheduleBtn.disabled = false;
-        
+        // this.scheduleBtn.disabled = false;
+    
         // Clear any scheduled tasks
         this.clearScheduledTask();
-        
-        // Simulate bot stopping (in a real app, this would be an API call)
-        this.addLogEntry('Bot stopped', 'info');
-        this.setStatus('Bot Stopped', 'error');
+    
+        try {
+            console.log('Stopping bot...');
+            const response = await fetch('http://localhost:5000/stop-processing', {
+                method: 'POST'
+            });
+    
+            const result = await response.json();
+            console.log('Stopping bot response:', result);
+            if (response.ok) {
+                this.showToast(result.message || 'Processing stopped.', 'warning');
+                // this.addLogEntry(result.message || 'Bot stopped', 'warning');
+                this.setStatus('Stopped', 'warning');
+            } else {
+                this.showToast(result.message || 'Bot was not running.', 'info');
+                // this.addLogEntry(result.message || 'Nothing to stop', 'info');
+                this.setStatus('Idle', 'info');
+            }
+        } catch (error) {
+            console.error('Error stopping bot:', error);
+            this.showToast(`Stop failed: ${error.message}`, 'error');
+            // this.addLogEntry(`Error stopping bot: ${error.message}`, 'error');
+            this.setStatus('Error', 'error');
+        }
     }
+    
     
     handleScheduleToggle() {
         if (this.scheduleEnabled.checked) {
