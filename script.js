@@ -23,7 +23,46 @@ class LogViewer {
         this.isBotRunning = false;
         this.scheduledTask = null;
         
+        // Create toast container if it doesn't exist
+        this.createToastContainer();
+        
         this.initEventListeners();
+    }
+    
+    createToastContainer() {
+        // Check if toast container already exists
+        if (!document.getElementById('toast-container')) {
+            const toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.position = 'fixed';
+            toastContainer.style.top = '20px';
+            toastContainer.style.right = '20px';
+            toastContainer.style.zIndex = '1000';
+            document.body.appendChild(toastContainer);
+        }
+    }
+    
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.className = 'toast-close';
+        closeBtn.onclick = () => toast.remove();
+        toast.appendChild(closeBtn);
+        
+        // Add to container
+        const container = document.getElementById('toast-container');
+        container.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 500);
+        }, 5000);
     }
     
     initEventListeners() {
@@ -52,11 +91,11 @@ class LogViewer {
         if (this.isLoading) return;
         
         this.isLoading = true;
-        this.setStatus('Loading...', 'loading');
+        // this.setStatus('Loading', 'info');
         this.hideError();
         
         try {
-            const response = await fetch('logs.txt');
+            const response = await fetch('http://localhost:5000/logs.txt');
             
             if (!response.ok) {
                 throw new Error(`Failed to load logs: ${response.status} ${response.statusText}`);
@@ -65,12 +104,12 @@ class LogViewer {
             const logText = await response.text();
             this.displayLogs(logText);
             this.updateStats(logText);
-            this.setStatus('Connected', 'success');
+            // this.setStatus('Connected', 'success');
             
         } catch (error) {
             console.error('Error loading logs:', error);
             this.showError(`Error loading logs: ${error.message}`);
-            this.setStatus('Error', 'error');
+            // this.setStatus('Error', 'error');
         } finally {
             this.isLoading = false;
         }
@@ -178,11 +217,11 @@ class LogViewer {
         
         // Update status based on bot state
         if (this.isBotRunning) {
-            this.setStatus('Bot Running', 'success');
+            this.setStatus('Running', 'info');
         } else if (this.scheduledTask) {
             this.setStatus('Scheduled', 'info');
         } else {
-            this.setStatus('Bot Stopped', 'error');
+            this.setStatus('Connected', 'success');
         }
     }
     
@@ -208,7 +247,7 @@ class LogViewer {
     }
     
     // Bot control methods
-    startBot() {
+    async startBot() {
         if (this.isBotRunning) return;
         
         this.isBotRunning = true;
@@ -219,16 +258,47 @@ class LogViewer {
         this.scheduleEnabled.disabled = true;
         this.scheduleInterval.disabled = true;
         this.scheduleUnit.disabled = true;
-        this.scheduleBtn.disabled = true;
         
-        // Simulate bot starting (in a real app, this would be an API call)
-        this.addLogEntry('Bot started successfully', 'success');
-        this.setStatus('Bot Running', 'success');
-        
-        // Start auto-refresh if not already running
-        if (!this.autoRefreshInterval) {
-            this.autoRefreshCheckbox.checked = true;
-            this.startAutoRefresh();
+        try {
+            // Show loading state
+            this.setStatus('Running', 'info');
+            
+            // Call the process-pdfs endpoint
+            const response = await fetch('http://localhost:5000/process-pdfs', {
+                method: 'GET'
+            });            
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                const msg = result.message || 'PDF processing started successfully';
+                // this.addLogEntry(msg, 'success');
+                this.showToast(msg, 'success');
+                this.setStatus('Completed', 'success');
+                
+                // Start auto-refresh if not already running
+                // if (!this.autoRefreshInterval) {
+                //     this.autoRefreshCheckbox.checked = true;
+                //     this.startAutoRefresh();
+                // }
+            } else {
+                throw new Error(result.error || 'Failed to start bot');
+            }
+        } catch (error) {
+            console.error('Error starting bot:', error);
+            this.setStatus('Error', 'error');
+            this.showToast(`Error: ${error.message}`, 'error');
+            this.addLogEntry(`Error starting bot: ${error.message}`, 'error');
+        } finally {
+            // Always re-enable buttons
+            this.isBotRunning = false;
+            this.startBotBtn.disabled = false;
+            this.stopBotBtn.disabled = true;
+    
+            // Re-enable schedule controls if needed
+            this.scheduleEnabled.disabled = false;
+            this.scheduleInterval.disabled = false;
+            this.scheduleUnit.disabled = false;
         }
     }
     
