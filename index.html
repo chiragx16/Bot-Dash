@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Log Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        .icon-container {
+            position: relative;
+            width: 40px;
+            height: 10px;
+            z-index: 100;
+        }
+
+        .icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            opacity: 0;
+            animation: icon-cycle 1.8s infinite;
+        }
+
+        /* Set specific animation delays for each icon */
+        .icon:nth-child(1) { animation-delay: 0s; }
+        .icon:nth-child(2) { animation-delay: 0.36s; } /* 1.8s / 5 icons = 0.36s */
+        .icon:nth-child(3) { animation-delay: 0.72s; }
+        .icon:nth-child(4) { animation-delay: 1.08s; }
+        .icon:nth-child(5) { animation-delay: 1.44s; }
+
+        @keyframes icon-cycle {
+            0%, 100% { opacity: 0; }
+            10% { opacity: 1; }
+            20% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗃️ Bot Log Viewer</h1>
+            <div class="controls">
+                <div class="bot-controls">
+                    <button id="startBotBtn" class="btn btn-success">Start Bot</button>
+                    <button id="stopBotBtn" class="btn btn-danger" disabled>Stop Bot</button>
+                    <div class="icon-container">
+                        <i class="fa-solid fa-person-swimming icon"></i>
+                        <i class="fa-solid fa-person-running icon"></i>
+                        <i class="fa-solid fa-person-biking icon"></i>
+                        <i class="fa-solid fa-wheelchair icon"></i>
+                        <i class="fa-solid fa-person-walking icon"></i>
+                    </div>
+                    <div class="schedule-controls">
+                        <span class="schedule-label">Schedule Bot Every</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="scheduleEnabled" class="toggle-switch-checkbox">
+                            <span class="toggle-switch-slider"></span>
+                        </label>
+                        <div id="scheduleSettings" class="schedule-settings">
+                            <input type="number" id="scheduleInterval" min="1" max="1440" value="5" class="schedule-input">
+                            <select id="scheduleUnit" class="schedule-select">
+                                <option value="seconds">seconds</option>
+                                <option value="minutes" selected>minutes</option>
+                                <option value="hours">hours</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-controls">
+                    <button id="refreshBtn" class="btn">🔄 Refresh Logs</button>
+                    <button id="clearBtn" class="btn">🗑️ Clear Display</button>
+                    <label class="toggle">
+                        <input type="checkbox" id="autoRefresh">
+                        <span>Auto-refresh (5s)</span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">Total Lines:</span>
+                <span id="totalLines" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Last Updated:</span>
+                <span id="lastUpdated" class="stat-value">Never</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Status:</span>
+                <span id="status" class="stat-value">Ready</span>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <div id="logContent" class="log-content">
+                <div class="loading">Click "Refresh Logs" to load bot logs...</div>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+    
+</body>
+</html>
